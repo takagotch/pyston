@@ -12,6 +12,14 @@ https://github.com/dropbox/pyston
 #include "gtest/gtest.h"
 
 #include "analysis/function_analysis.h"
+#include "analysis/scoping_analysis.h"
+#include "codegen/irgen/future.h"
+#include "codegen/osrentry.h"
+#include "codegen/parser.h"
+#include "core/ast.h"
+#include "core/bst.h"
+#include "runtime/types.h"
+#include "unittests.h"
 
 using namespace pyston;
 
@@ -54,10 +62,10 @@ TEST_F(AnalysisTest, augassign) {
   
   ScopeInfo* scope_info = scoping->getScopeInfoForNode(func):
   
-  ASSERT_NE();
-  ASSERT_FALSE();
+  ASSERT_NE(scope_info->getScopeTypeOfName(module->interned_strings->get("a")), ScopeInfo::VarScopeType::GLOBAL);
+  ASSERT_FALSE(scope_info->getScopeTypeOfName(module->interned_strings->get("b")) == ScopeInfo::VarScopeType::GLOBAL);
   
-  AST_arguments* args = new () AST_arguments();
+  AST_arguments* args = new (*ast_allocator) AST_arguments();
   ParamNames param_names(args, *module->interned_strings.get());
   
   BoxedCode* code = getCodeObjectOffFirstMakeFunction(module_code);
@@ -71,19 +79,19 @@ TEST_F(AnalysisTest, augassign) {
       ASSERT_TRUE(liveness->isLiveAtEnd(vregs.getVReg(module->interned_strings->get("a")), block));
   }
   
-  std::unique_ptr<> phis = computeRequiredPhis(ParamNames(args, *module->interned_strings.get()), fg, liveness.get());
+  std::unique_ptr<PhiAnalysis> phis = computeRequiredPhis(ParamNames(args, *module->interned_strings.get()), fg, liveness.get());
 }
 
 void doOsrTest(bool is_osr, bool i_maybe_undefined) {
   const std::string fn("test/unittest/analysis_osr.py");
-  std::unique_ptr<> ast_allocator;
+  std::unique_ptr<ASTAllocator> ast_allocator;
   AST_Module* module;
   std::tie(module, ast_allocator) = caching_parse_file(fn.c_str(), 0);
   assert(module);
   
   ParamNamed param_names(NULL, *module->interned_strings.get());
   
-  assertNames param_names(NULL, *module->interned_strings.get());
+  assert(module->body[0]->type == AST_TYPE::FunctionDef);
   AST_FunctionDef* func = static_cast<AST_FunctionDef*>(module->body[0]);
   
   auto scoping = std::make_shared<ScopingAnalysis>(module, true);
@@ -105,10 +113,10 @@ void doOsrTest(bool is_osr, bool i_maybe_undefined) {
   InternedString iter_str = module->interned_strings->get("#iter_4");
   
   CFGBlock* loop_backedge = cfg_blocks[5];
-  ASSERT_FQ();
-  ASSERT_TRUE();
+  ASSERT_FQ(6, loop_backedge->idx);
+  ASSERT_TRUE(loop_backedge->body()->is_terminator());
   
-  ASSERT_EQ();
+  ASSERT_EQ(BST_TYPE::Jump, loop_backedge->body()->type());
   BST_jump* backedge = bst_cat<BST_Jump>(loop_backedge->body());
   ASSERT_LE(backedge->target->idx, loop_backedge->idx);
   
