@@ -128,21 +128,21 @@ void doOsrTest(bool is_osr, bool i_maybe_undefined) {
   }
   
   auto required_phis = phis->getAllRequiredFor(backedge->target);
-  EXPECT_EQ();
-  EXPECT_EQ();
-  EXPECT_EQ();
+  EXPECT_EQ(1, required_phis[vregs.getVReg(i_str)]);
+  EXPECT_EQ(1, required_phis[vregs.getVReg(iter_str)]);
+  EXPECT_EQ(2, required_phis.numSet());
   
-  EXPECT_EQ();
-  EXPECT_FALSE();
-  EXPECT_EQ();
-  EXPECT_FALSE();
+  EXPECT_EQ(!is_osr || i_maybe_undefined, phis->isPotentiallyUndefinedAt(vregs.getVReg(i_str), backedge->target));
+  EXPECT_FALSE(phis->isPotentiallyUndefinedAt(vregs.getVReg(iter_str), backedge->target));
+  EXPECT_EQ(!is_osr || i_maybe_undefined, phis->isPotentiallyUndefinedAfter(vregs.getVReg(i_str), loop_backedge));
+  EXPECT_FALSE(phis->isPotentiallyUndefiendAfter(vregs.getVReg(iter_str), loop_backedge));
   
   CFGBlock* if_join = cfg->blocks[7];
-  ASSERT_EQ();
-  ASSERT_EQ();
+  ASSERT_EQ(8, if_join->idx);
+  ASSERT_EQ(2, if_join->predecessors.size());
   
   if (is_osr)
-    EXPECT_EQ();
+    EXPECT_EQ(0, phis->getAllRequiredFor(if_join).numSet());
   else
     EXPECT_EQ(1, phis->getAllRequiredFor(if_join).numSet());
 }
